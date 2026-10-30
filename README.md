@@ -2,13 +2,13 @@
 
 ## Identificação
 
-- **Aluno:** _(coloque seu nome completo)_
-- **Disciplina:** _(nome da disciplina)_
-- **Professor:** _(nome do professor)_
+- **Aluno:** Iago Frânquel Freitas Sousa
+- **Disciplina:** Projeto de Banco de Dados
+- **Professor:** Anderson
 
 ## Vídeos
 
-- **Trabalho atual (Supabase + Redis):** _(cole aqui o link do novo vídeo)_
+- **Trabalho atual (Supabase + Redis):** https://youtu.be/VW8ItCCtktE
 - **Trabalho anterior (View, Function e Procedure):** https://youtu.be/DC_rN21dBm0
 
 ## Sobre o projeto

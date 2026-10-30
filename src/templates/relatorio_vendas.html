@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Relatório de Vendas{% endblock %}
+{% block content %}
+<h1>Relatório de Vendas</h1>
+<div class="sub">Dados consolidados lidos da View <code>vw_relatorio_vendas</code>.</div>
+
+{% include "_origem.html" %}
+
+<div class="grid" style="margin-bottom:20px">
+  <div class="card kpi">{{ resumo.qtd }}<small>vendas concluídas</small></div>
+  <div class="card kpi">{{ resumo.faturamento|brl }}<small>faturamento</small></div>
+  <div class="card kpi">{{ resumo.descontos|brl }}<small>descontos concedidos</small></div>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr>
+      <th>#</th><th>Data</th><th>Cliente</th><th class="n">Itens</th>
+      <th class="n">Subtotal</th><th class="n">Desconto</th><th class="n">Total</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for v in vendas %}
+      <tr>
+        <td>{{ v.venda_id }}</td>
+        <td>{{ v.data_fmt }}</td>
+        <td>{{ v.cliente }} <span class="tag t-{{ v.categoria }}">{{ v.categoria }}</span></td>
+        <td class="n">{{ v.qtd_itens }}</td>
+        <td class="n">{{ v.subtotal|brl }}</td>
+        <td class="n">{{ v.desconto|brl }}</td>
+        <td class="n"><strong>{{ v.total|brl }}</strong></td>
+        <td><span class="tag t-{{ v.status }}">{{ v.status }}</span></td>
+        <td>
+          {% if v.status == 'CONCLUIDA' %}
+          <form method="post" action="{{ url_for('cancelar_venda', venda_id=v.venda_id) }}"
+                onsubmit="return confirm('Cancelar a venda #{{ v.venda_id }}?')">
+            <button class="sec">Cancelar</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" style="color:var(--mut)">Nenhuma venda registrada ainda. Faça a primeira em "Nova Venda".</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="src">Botão Cancelar executa a Procedure <code>sp_cancelar_venda</code>.</div>
+</div>
+{% endblock %}

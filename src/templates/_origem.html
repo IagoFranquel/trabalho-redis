@@ -1,0 +1,11 @@
+{% if origem %}
+<div class="origem {{ origem.origem }}">
+  {% if origem.origem == 'redis' %}
+    ⚡ Dados vindos do <strong>Redis</strong> (cache HIT) em <strong>{{ origem.ms }} ms</strong> · expira em {{ origem.ttl }} s
+  {% elif origem.origem == 'supabase' %}
+    🗄️ Dados vindos do <strong>Supabase</strong> (cache MISS) em <strong>{{ origem.ms }} ms</strong> · agora guardados no Redis por {{ origem.ttl }} s
+  {% else %}
+    ⚠️ Redis indisponível ou não configurado: dados lidos direto do Supabase em <strong>{{ origem.ms }} ms</strong>
+  {% endif %}
+</div>
+{% endif %}

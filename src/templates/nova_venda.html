@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Nova Venda{% endblock %}
+{% block content %}
+<h1>Nova Venda</h1>
+<div class="sub">O desconto é calculado pela Function <code>fn_calcular_desconto</code> e a venda é gravada pela Procedure <code>sp_realizar_venda</code>.</div>
+
+<form method="post" class="card">
+  <div class="form-row" style="margin-bottom:16px">
+    <label>Cliente
+      <select name="cliente_id" id="cliente" required>
+        <option value="">Selecione...</option>
+        {% for c in clientes %}
+        <option value="{{ c.id }}">{{ c.nome }} ({{ c.categoria }})</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <table>
+    <thead><tr><th>Produto</th><th class="n">Preço</th><th class="n">Estoque</th><th class="n">Quantidade</th></tr></thead>
+    <tbody>
+    {% for p in produtos %}
+      <tr data-preco="{{ p.preco }}">
+        <td>{{ p.nome }}</td>
+        <td class="n">{{ p.preco|brl }}</td>
+        <td class="n">{{ p.estoque }}</td>
+        <td class="n">
+          <input type="number" class="qtd" name="produto_{{ p.id }}" min="0" max="{{ p.estoque }}"
+                 value="0" style="width:80px" {{ 'disabled' if p.estoque == 0 }}>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px">
+    <div>
+      <div>Subtotal: <strong id="subtotal">R$ 0,00</strong></div>
+      <div>Desconto (função do banco): <strong id="desconto">R$ 0,00</strong></div>
+      <div style="font-size:18px">Total: <strong id="total">R$ 0,00</strong></div>
+    </div>
+    <button type="submit">Confirmar venda</button>
+  </div>
+  <div class="src">Regra: cliente VIP 10% + 5% extra para subtotal a partir de R$ 500,00.</div>
+  <div class="src" id="origem-desconto"></div>
+</form>
+
+<script>
+const fmt = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+const cliente = document.getElementById('cliente');
+const linhas = [...document.querySelectorAll('tbody tr')];
+
+async function recalcular() {
+  let subtotal = 0;
+  linhas.forEach(tr => {
+    const q = parseInt(tr.querySelector('.qtd').value) || 0;
+    subtotal += q * parseFloat(tr.dataset.preco);
+  });
+  subtotal = Math.round(subtotal * 100) / 100;
+  document.getElementById('subtotal').textContent = fmt(subtotal);
+
+  if (!cliente.value) {
+    document.getElementById('desconto').textContent = fmt(0);
+    document.getElementById('total').textContent = fmt(subtotal);
+    return;
+  }
+  try {
+    const r = await fetch(`/api/desconto?cliente_id=${cliente.value}&subtotal=${subtotal}`);
+    const d = await r.json();
+    document.getElementById('desconto').textContent = fmt(d.desconto || 0);
+    document.getElementById('total').textContent = fmt(d.total ?? subtotal);
+    const o = document.getElementById('origem-desconto');
+    if (d.origem === 'redis') o.textContent = `⚡ Desconto lido do Redis (cache HIT) em ${d.ms} ms`;
+    else if (d.origem === 'supabase') o.textContent = `🗄️ Desconto calculado pela Function no Supabase (cache MISS) em ${d.ms} ms e guardado no Redis`;
+    else o.textContent = `⚠️ Redis indisponível: desconto calculado direto no Supabase em ${d.ms} ms`;
+  } catch (e) { /* mantém valores anteriores */ }
+}
+
+cliente.addEventListener('change', recalcular);
+document.querySelectorAll('.qtd').forEach(i => i.addEventListener('input', recalcular));
+</script>
+{% endblock %}

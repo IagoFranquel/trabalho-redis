@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Painel Redis{% endblock %}
+{% block content %}
+<h1>Painel Redis</h1>
+<div class="sub">O que a aplicação guarda no Redis: cache das consultas ao Supabase, ranking de produtos e contadores.</div>
+
+<div class="card">
+  <h2>Conexão</h2>
+  {% if info.conectado %}
+    <span class="tag t-OK">CONECTADO</span>
+    <span style="margin-left:8px">{{ info.host }}{% if info.versao %} · Redis {{ info.versao }}{% endif %}</span>
+  {% elif info.configurado %}
+    <span class="tag t-ESGOTADO">SEM CONEXÃO</span>
+    <span style="margin-left:8px">{{ info.host }} — a aplicação continua funcionando, lendo direto do Supabase.</span>
+  {% else %}
+    <span class="tag t-BAIXO">NÃO CONFIGURADO</span>
+    <span style="margin-left:8px">Defina a variável de ambiente <code>REDIS_URL</code> e reinicie a aplicação.</span>
+  {% endif %}
+</div>
+
+<div class="grid" style="margin-bottom:20px">
+  <div class="card kpi">{{ stats.hits }}<small>cache HIT (leu do Redis)</small></div>
+  <div class="card kpi">{{ stats.misses }}<small>cache MISS (foi ao Supabase)</small></div>
+  <div class="card kpi">{{ stats.taxa }}%<small>taxa de acerto · {{ stats.vendas }} venda(s) no contador</small></div>
+</div>
+
+<div class="card">
+  <h2>1. Cache com TTL — chaves guardadas agora</h2>
+  <table>
+    <thead><tr><th>Chave</th><th class="n">Expira em</th><th class="n">Último Supabase</th><th class="n">Último Redis</th></tr></thead>
+    <tbody>
+    {% for c in chaves %}
+      <tr>
+        <td><code>{{ c.chave }}</code></td>
+        <td class="n">{{ c.ttl }} s</td>
+        <td class="n">{% if latencia.get(c.chave, {}).get('supabase') %}{{ latencia[c.chave]['supabase'] }} ms{% else %}-{% endif %}</td>
+        <td class="n">{% if latencia.get(c.chave, {}).get('redis') %}{{ latencia[c.chave]['redis'] }} ms{% else %}-{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" style="color:var(--mut)">Nenhuma chave em cache. Abra o Relatório de Vendas ou o Estoque para criar.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="src">Relatório e estoque ficam 60 s no cache; o desconto, 300 s. Uma venda ou cancelamento apaga o cache do relatório e do estoque (invalidação), para os números nunca ficarem desatualizados.</div>
+  <form method="post" action="{{ url_for('redis_limpar_cache') }}" style="margin-top:12px">
+    <button class="sec" style="font-size:13px;padding:6px 12px">Limpar cache</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>2. Ranking de produtos mais vendidos (Sorted Set)</h2>
+  <table>
+    <thead><tr><th>#</th><th>Produto</th><th class="n">Unidades vendidas</th></tr></thead>
+    <tbody>
+    {% for nome, qtd in ranking %}
+      <tr><td>{{ loop.index }}</td><td>{{ nome }}</td><td class="n"><strong>{{ qtd }}</strong></td></tr>
+    {% else %}
+      <tr><td colspan="3" style="color:var(--mut)">Sem vendas no ranking ainda.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="src">Cada venda soma as quantidades com <code>ZINCRBY</code> e cada cancelamento subtrai. Ler o top 5 é imediato (<code>ZREVRANGE</code>), sem consulta com GROUP BY no Supabase.</div>
+  <form method="post" action="{{ url_for('redis_reconstruir_ranking') }}" style="margin-top:12px">
+    <button class="sec" style="font-size:13px;padding:6px 12px;color:var(--pri);border-color:var(--pri)">Recalcular ranking pelo Supabase</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>3. Contadores atômicos</h2>
+  <div class="src" style="margin-top:0">Os números de HIT, MISS e vendas acima são contadores do Redis (<code>INCR</code>), seguros mesmo com vários acessos ao mesmo tempo.</div>
+  <form method="post" action="{{ url_for('redis_zerar_estatisticas') }}" style="margin-top:12px">
+    <button class="sec" style="font-size:13px;padding:6px 12px">Zerar contadores</button>
+  </form>
+</div>
+{% endblock %}

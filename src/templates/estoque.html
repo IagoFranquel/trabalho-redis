@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Estoque{% endblock %}
+{% block content %}
+<h1>Estoque</h1>
+<div class="sub">Situação dos produtos lida da View <code>vw_estoque_situacao</code>.</div>
+{% include "_origem.html" %}
+<div class="card">
+  <table>
+    <thead><tr>
+      <th>Produto</th><th class="n">Preço</th><th class="n">Estoque</th>
+      <th class="n">Mínimo</th><th class="n">Total vendido</th><th>Situação</th>
+    </tr></thead>
+    <tbody>
+    {% for i in itens %}
+      <tr>
+        <td>{{ i.nome }}</td>
+        <td class="n">{{ i.preco|brl }}</td>
+        <td class="n">{{ i.estoque }}</td>
+        <td class="n">{{ i.estoque_minimo }}</td>
+        <td class="n">{{ i.total_vendido }}</td>
+        <td><span class="tag t-{{ i.situacao }}">{{ i.situacao }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

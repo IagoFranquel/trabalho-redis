@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h1>Clientes</h1>
+<div class="sub">Cadastro de clientes (CRUD). A categoria VIP influencia o desconto calculado no banco.</div>
+
+<form method="post" class="card form-row">
+  <label>Nome <input name="nome" required></label>
+  <label>E-mail <input name="email" type="email"></label>
+  <label>Categoria
+    <select name="categoria"><option>REGULAR</option><option>VIP</option></select>
+  </label>
+  <button>Cadastrar</button>
+</form>
+
+<div class="card">
+  <table>
+    <thead><tr><th>#</th><th>Nome</th><th>E-mail</th><th>Categoria</th></tr></thead>
+    <tbody>
+    {% for c in clientes %}
+      <tr><td>{{ c.id }}</td><td>{{ c.nome }}</td><td>{{ c.email or '-' }}</td>
+          <td><span class="tag t-{{ c.categoria }}">{{ c.categoria }}</span></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
